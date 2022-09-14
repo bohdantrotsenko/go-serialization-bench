@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package=".;btbench";
+
+message Envelope {
+    repeated SampleMsg msg = 1;
+}
+
+message SampleMsg {
+    string id = 1;
+    string payload = 2;
+}

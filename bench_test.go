@@ -5,6 +5,7 @@ import (
 	"log"
 	"testing"
 
+	"github.com/amzn/ion-go/ion"
 	"github.com/pquerna/ffjson/ffjson"
 	"google.golang.org/protobuf/proto"
 )
@@ -14,22 +15,31 @@ var envelope2 *Envelope2
 
 var bytesProto []byte
 var bytesJSON []byte
+var bytesION []byte
 
 func TestMain(m *testing.M) {
 	log.Println("in TestMain")
 	envelope = GenerateEnvelope()
 	envelope2 = FromEnvelope(envelope)
+	var err error
 
 	bytesProto, _ = proto.Marshal(envelope)
 	_, _ = ffjson.Marshal(envelope2)
 	_, _ = json.Marshal(envelope2)
 	bytesJSON, _ = json.Marshal(envelope)
-	var env Envelope
-	var env2 Envelope2
+	bytesION, err = ion.MarshalBinary(envelope2)
+	if err != nil {
+		panic(err)
+	}
+	var env, env2, envION Envelope
 	proto.Unmarshal(bytesProto, &env)
 	json.Unmarshal(bytesJSON, &env)
 	ffjson.Unmarshal(bytesJSON, &env2)
 	json.Unmarshal(bytesJSON, &env2)
+	err = ion.Unmarshal(bytesION, &envION)
+	if err != nil {
+		panic(err)
+	}
 	m.Run()
 }
 
@@ -65,6 +75,25 @@ func BenchmarkJSONUnmarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var env Envelope
 		err := json.Unmarshal(bytesJSON, &env)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkION(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, err := ion.MarshalBinary(envelope2)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkIONUnmarshal(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		var env Envelope2
+		err := ion.Unmarshal(bytesION, &env)
 		if err != nil {
 			b.Error(err)
 		}

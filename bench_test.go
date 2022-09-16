@@ -12,6 +12,7 @@ import (
 
 var envelope *Envelope
 var envelope2 *Envelope2
+var envelope3 *Envelope3
 
 var bytesProto []byte
 var bytesJSON []byte
@@ -21,19 +22,24 @@ func TestMain(m *testing.M) {
 	log.Println("in TestMain")
 	envelope = GenerateEnvelope()
 	envelope2 = FromEnvelope(envelope)
+	envelope3 = FromEnvelope3(envelope)
 	var err error
 
 	bytesProto, _ = proto.Marshal(envelope)
 	_, _ = ffjson.Marshal(envelope2)
 	_, _ = json.Marshal(envelope2)
+	_, _ = json.Marshal(envelope3)
 	bytesJSON, _ = json.Marshal(envelope)
 	bytesION, err = ion.MarshalBinary(envelope2)
 	if err != nil {
 		panic(err)
 	}
-	var env, env2, envION Envelope
+	var env, envION Envelope
+	var env2 Envelope2
+	var env3 Envelope3
 	proto.Unmarshal(bytesProto, &env)
 	json.Unmarshal(bytesJSON, &env)
+	json.Unmarshal(bytesJSON, &env3)
 	ffjson.Unmarshal(bytesJSON, &env2)
 	json.Unmarshal(bytesJSON, &env2)
 	err = ion.Unmarshal(bytesION, &envION)
@@ -113,6 +119,25 @@ func BenchmarkFFJSONUnmarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var env2 Envelope2
 		err := ffjson.Unmarshal(bytesJSON, &env2)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkEasyJSON(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, err := json.Marshal(envelope3)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkEasyJSONUnmarshal(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		var env Envelope3
+		err := json.Unmarshal(bytesJSON, &env)
 		if err != nil {
 			b.Error(err)
 		}
